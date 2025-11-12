@@ -1,0 +1,76 @@
+# =====================================
+# DJANGO PROJECT .gitignore
+# =====================================
+
+# --- Python ---
+*.py[cod]
+__pycache__/
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# --- Virtual environments ---
+venv/
+myvenv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Environment variables (secrets, keys) ---
+.env
+.env.*
+
+# --- Databases ---
+db.sqlite3
+*.db
+
+# --- Django static and media files ---
+# (⚠️ on ignore seulement les fichiers générés automatiquement)
+staticfiles/
+static_root/
+media/
+
+# --- Logs & caches ---
+*.log
+*.pot
+*.pyc
+*.pyo
+*.mo
+*.pickle
+*.cache
+*.tmp
+*.swp
+
+# --- IDE / OS junk ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+*.bak
+
+# --- Node / JS build files (si front intégré) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Coverage / testing ---
+.coverage
+*.coverage
+nosetests.xml
+coverage.xml
+*.spec
+
+# --- PyInstaller ---
+*.manifest
+*.spec
+
+# --- Misc ---
+__pypackages__/
