@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Match - {{ match.event_name }}{% endblock %}
+
+{% block content %}
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h1>{{ match.event_name }}</h1>
+        <p class="text-muted">Date et heure : {{ match.date_hour|date:"d/m/Y à H:i" }}</p>
+    </div>
+</div>
+
+<!-- Section des équipes et votes -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3>{{ team1.team.team_name }}</h3>
+                <p class="h4">{{ team1.votes }} vote{{ team1.votes|pluralize }}</p>
+                <div class="progress mt-3" style="height: 30px;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ team1_percent }}%">
+                        {{ team1_percent }}%
+                    </div>
+                </div>
+                {% if not has_voted %}
+                    <a href="{% url 'vote' match.id 1 %}" class="btn btn-primary mt-3">Voter pour cette équipe</a>
+                {% else %}
+                    <p class="text-muted mt-3">Vous avez déjà voté</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3>{{ team2.team.team_name }}</h3>
+                <p class="h4">{{ team2.votes }} vote{{ team2.votes|pluralize }}</p>
+                <div class="progress mt-3" style="height: 30px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ team2_percent }}%">
+                        {{ team2_percent }}%
+                    </div>
+                </div>
+                {% if not has_voted %}
+                    <a href="{% url 'vote' match.id 2 %}" class="btn btn-success mt-3">Voter pour cette équipe</a>
+                {% else %}
+                    <p class="text-muted mt-3">Vous avez déjà voté</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bouton pour annuler le vote -->
+{% if has_voted %}
+<div class="row mt-3">
+    <div class="col-md-12 text-center">
+        <a href="{% url 'cancel_vote' match.id %}" class="btn btn-warning">Annuler mon vote</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Section des commentaires -->
+<div class="row mt-5">
+    <div class="col-md-12">
+        <h2>Commentaires</h2>
+        
+        <!-- Formulaire pour ajouter un commentaire -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Ajouter un commentaire</h5>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="add_comment" value="1">
+                    <div class="form-group">
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger">{{ form.username.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        {{ form.text }}
+                        {% if form.text.errors %}
+                            <div class="text-danger">{{ form.text.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Publier le commentaire</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Liste des commentaires -->
+        {% if comments %}
+            {% for comment in comments %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">{{ comment.username }}</h6>
+                        <p class="card-text">{{ comment.text }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">Aucun commentaire pour le moment.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
