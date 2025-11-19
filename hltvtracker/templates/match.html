@@ -5,11 +5,8 @@
 {% block content %}
 {% if messages %}
     {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3" role="alert">
+        <div class="alert alert-{{ message.tags }} mt-3" role="alert">
             {{ message }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
         </div>
     {% endfor %}
 {% endif %}
@@ -21,14 +18,13 @@
     </div>
 </div>
 
-<!-- Section des équipes et votes -->
 <div class="row mt-4">
     <div class="col-md-6">
-        <div class="card">
+        <div class="card team-card">
             <div class="card-body text-center">
                 <h3>{{ team1.team.team_name }}</h3>
-                <p class="h4">{{ team1.votes }} vote{{ team1.votes|pluralize }}</p>
-                <div class="progress mt-3" style="height: 30px;">
+                <p class="h4 votes-count">{{ team1.votes }} vote{{ team1.votes|pluralize }}</p>
+                <div class="progress mt-3 progress-custom">
                     <div class="progress-bar" role="progressbar" style="width: {{ team1_percent }}%">
                         {{ team1_percent }}%
                     </div>
@@ -43,11 +39,11 @@
     </div>
     
     <div class="col-md-6">
-        <div class="card">
+        <div class="card team-card">
             <div class="card-body text-center">
                 <h3>{{ team2.team.team_name }}</h3>
-                <p class="h4">{{ team2.votes }} vote{{ team2.votes|pluralize }}</p>
-                <div class="progress mt-3" style="height: 30px;">
+                <p class="h4 votes-count">{{ team2.votes }} vote{{ team2.votes|pluralize }}</p>
+                <div class="progress mt-3 progress-custom">
                     <div class="progress-bar bg-success" role="progressbar" style="width: {{ team2_percent }}%">
                         {{ team2_percent }}%
                     </div>
@@ -62,7 +58,6 @@
     </div>
 </div>
 
-<!-- Bouton pour annuler le vote -->
 {% if has_voted %}
 <div class="row mt-3">
     <div class="col-md-12 text-center">
@@ -71,16 +66,14 @@
 </div>
 {% endif %}
 
-<!-- Section des commentaires -->
-<div class="row mt-5">
+<div class="row comments-section">
     <div class="col-md-12">
         <h2>Commentaires</h2>
         
-        <!-- Formulaire pour ajouter un commentaire -->
         <div class="card mb-4">
             <div class="card-body">
                 <h5 class="card-title">Ajouter un commentaire</h5>
-                <form method="post">
+                <form method="post" class="comment-form">
                     {% csrf_token %}
                     <input type="hidden" name="add_comment" value="1">
                     <div class="form-group">
@@ -100,12 +93,14 @@
             </div>
         </div>
         
-        <!-- Liste des commentaires -->
         {% if comments %}
             {% for comment in comments %}
-                <div class="card mb-2">
+                <div class="card comment-card">
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">{{ comment.username }}</h6>
+                        <div class="comment-header">
+                            <h6 class="card-subtitle mb-2 text-muted comment-author">{{ comment.username }}</h6>
+                            <small class="text-muted comment-date">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                        </div>
                         <p class="card-text">{{ comment.text }}</p>
                     </div>
                 </div>

@@ -1,32 +1,36 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>
-        {% block title %}
-            Django App
-        {% endblock %}
-    </title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-          rel="stylesheet"/>
+    <meta charset="UTF-8">
+    <title>{% block title %}Vote de Matchs{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'hltvtracker/css/styles.css' %}">
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="{% url 'home' %}">Vote de Matchs</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
-            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span
-            class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav">
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'home' %}">Accueil</a>
-            </li>
-        </ul>
-    </div>
-</nav>
-<div class="container">{% block content %} {% endblock %}</div>
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <header class="site-header">
+        {% block header %}
+        <div class="header-content">
+            <h1 class="site-title">Vote de Matchs</h1>
+            <nav class="main-nav">
+                <a href="{% url 'home' %}" class="nav-link">Accueil</a>
+                <a href="{% url 'match_detail' 1 %}" class="nav-link">Match #1</a>
+            </nav>
+        </div>
+        {% endblock %}
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        {% block footer %}
+        <div class="footer-content">
+            <p>Youri Sanchez - Projet Django - Tentative 1</p>
+        </div>
+        {% endblock %}
+    </footer>
 </body>
 </html>
