@@ -25,11 +25,10 @@ venv.bak/
 .env.*
 
 # --- Databases ---
-db.sqlite3
-*.db
+#db.sqlite3
+#*.db
 
 # --- Django static and media files ---
-# (⚠️ on ignore seulement les fichiers générés automatiquement)
 staticfiles/
 static_root/
 media/

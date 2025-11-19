@@ -34,7 +34,10 @@ class MatchTeam(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     team_pos = models.IntegerField(choices=[(1, 'Équipe 1'), (2, 'Équipe 2')])
     votes = models.IntegerField(default=0)
-    
+
+    class Meta:
+        unique_together = ['match', 'team_pos']
+
     def __str__(self):
         return f"{self.match.event_name} - {self.team.team_name} (Position {self.team_pos})"
 
@@ -44,6 +47,7 @@ class Comment(models.Model):
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
     username = models.CharField(max_length=100)
     text = models.TextField()
-    
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+
     def __str__(self):
         return f"{self.username} sur {self.match.event_name}"
