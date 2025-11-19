@@ -10,11 +10,6 @@ def home(request):
     return render(request, 'home.html')
 
 
-def todos(request):
-    items = TodoItem.objects.all()
-    return render(request, 'todos.html', {"todos": items})
-
-
 def match_detail(request, match_id):
     """
     Affiche les détails d'un match : les équipes, les votes, les pourcentages et les commentaires.
