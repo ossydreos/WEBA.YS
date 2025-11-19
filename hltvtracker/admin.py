@@ -8,4 +8,5 @@ from .models import *
 admin.site.register(Team)
 admin.site.register(Match)
 admin.site.register(MatchTeam)
+admin.site.register(Vote)
 admin.site.register(Comment)

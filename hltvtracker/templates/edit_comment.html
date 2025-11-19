@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier le commentaire{% endblock %}
+
+{% block content %}
+<div class="comment-edit-section">
+    <h1>Modifier votre commentaire</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message-alert" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="comment-edit-card">
+        <h2>Modification du commentaire</h2>
+        <p class="comment-info">
+            Match : {{ comment.match.event_name }}<br>
+            Posté le {{ comment.created_at|date:"d/m/Y à H:i" }}
+        </p>
+
+        <form method="post" class="comment-form">
+            {% csrf_token %}
+            <input type="hidden" name="edit_comment" value="1">
+
+            <div class="form-field">
+                <label for="{{ form.username.id_for_label }}">Nom d'utilisateur :</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="error-message">{{ form.username.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.text.id_for_label }}">Commentaire :</label>
+                {{ form.text }}
+                {% if form.text.errors %}
+                    <div class="error-message">{{ form.text.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="submit-button">Modifier le commentaire</button>
+                <a href="{% url 'match_detail' comment.match.id %}" class="cancel-button">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

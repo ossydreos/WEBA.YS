@@ -2,17 +2,7 @@ from django.db import models
 
 # Create your models here.
 
-class TodoItem(models.Model):
-    title = models.CharField(max_length=100)
-    completed = models.BooleanField(default=False)
-    def __str__(self):
-        return self.title
-
-
-# Modèles pour le système de votes de matchs
-
 class Team(models.Model):
-    """Représente une équipe"""
     team_name = models.CharField(max_length=100)
     
     def __str__(self):
@@ -20,7 +10,6 @@ class Team(models.Model):
 
 
 class Match(models.Model):
-    """Représente un match entre deux équipes"""
     event_name = models.CharField(max_length=200)
     date_hour = models.DateTimeField()
     
@@ -29,7 +18,6 @@ class Match(models.Model):
 
 
 class MatchTeam(models.Model):
-    """Lien entre un match et une équipe, avec position et votes"""
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     team_pos = models.IntegerField(choices=[(1, 'Équipe 1'), (2, 'Équipe 2')])
@@ -42,8 +30,20 @@ class MatchTeam(models.Model):
         return f"{self.match.event_name} - {self.team.team_name} (Position {self.team_pos})"
 
 
+class Vote(models.Model):
+  
+    match_team = models.ForeignKey(MatchTeam, on_delete=models.CASCADE)
+    session_key = models.CharField(max_length=40) 
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['match_team', 'session_key'] 
+
+    def __str__(self):
+        return f"Vote de {self.session_key} pour {self.match_team}"
+
+
 class Comment(models.Model):
-    """Commentaire laissé sur un match"""
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
     username = models.CharField(max_length=100)
     text = models.TextField()
