@@ -2,31 +2,14 @@
 {% block title %}Accueil - Vote de Matchs{% endblock %}
 
 {% block content %}
-    <div class="welcome-section">
+    <div class="hero-section">
         <h1>Bienvenue sur le système de vote de matchs</h1>
-        <p class="lead">Votez pour vos équipes préférées et laissez vos commentaires !</p>
+        <p class="hero-text">Votez pour vos équipes préférées et laissez vos commentaires !</p>
     </div>
 
-    <section class="features">
-        <div class="feature-card">
-            <h2>Votes en temps réel</h2>
-            <p>Suivez les votes de chaque équipe avec des barres de progression dynamiques.</p>
-        </div>
-
-        <div class="feature-card">
-            <h2>Commentaires</h2>
-            <p>Laissez vos impressions et discutez des matchs avec la communauté.</p>
-        </div>
-
-        <div class="feature-card">
-            <h2>Interface simple</h2>
-            <p>Navigation intuitive et design épuré pour une expérience optimale.</p>
-        </div>
-    </section>
-
-    <section class="cta-section">
+    <section class="call-to-action">
         <h2>Prêt à voter ?</h2>
         <p>Découvrez les matchs disponibles :</p>
-        <a href="{% url 'match_detail' 1 %}" class="btn btn-primary btn-large">Voir le Match #1</a>
+        <a href="{% url 'match_detail' 1 %}" class="main-button">Voir le Match #1</a>
     </section>
 {% endblock %}
