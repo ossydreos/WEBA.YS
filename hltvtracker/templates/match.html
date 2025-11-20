@@ -93,10 +93,10 @@
                     <div class="comment-header">
                         <span class="comment-author">{{ comment.username }}</span>
                         <span class="comment-date">{{ comment.created_at|date:"d/m/Y H:i" }}</span>
-                        <a href="{% url 'edit_comment' comment.id %}" class="edit-link" title="Modifier ce commentaire">✏️ Modifier</a>
+                        <a href="{% url 'edit_comment' comment.id %}" class="edit-link" title="Modifier ce commentaire">Modifier</a>
                         <form method="post" action="{% url 'delete_comment' comment.id %}" class="delete-form" style="display: inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')">
                             {% csrf_token %}
-                            <button type="submit" class="delete-link" title="Supprimer ce commentaire">🗑️ Supprimer</button>
+                            <button type="submit" class="delete-link" title="Supprimer ce commentaire"> Supprimer</button>
                         </form>
                     </div>
                     <p class="comment-text">{{ comment.text }}</p>
