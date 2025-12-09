@@ -1,8 +1,13 @@
-from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
+import json
+
 from django.contrib import messages
-from django.db.models import Count
-from .models import *
+from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.timezone import localtime
+from django.views.decorators.http import require_http_methods
+
 from .forms import CommentForm
+from .models import *
 
 
 def edit_comment(request, comment_id):
@@ -56,7 +61,6 @@ def match_detail(request, match_id):
     team1 = match_teams.filter(team_pos=1).first()
     team2 = match_teams.filter(team_pos=2).first()
 
-    # Calculer les pourcentages de votes
     team1_votes = team1.votes if team1 else 0
     team2_votes = team2.votes if team2 else 0
     total_votes = team1_votes + team2_votes
@@ -101,6 +105,46 @@ def match_detail(request, match_id):
     return render(request, 'match.html', context)
 
 
+def _serialize_comment(comment):
+    """Retourne un dict prêt à être envoyé en JSON."""
+    return {
+        "id": comment.id,
+        "username": comment.username,
+        "text": comment.text,
+        "created_at": localtime(comment.created_at).strftime("%d/%m/%Y %H:%M") if comment.created_at else "",
+    }
+
+
+@require_http_methods(["GET", "POST"])
+def comments_api(request, match_id):
+    """API simple en JSON pour récupérer ou créer des commentaires (Ajax)."""
+    match = get_object_or_404(Match, id=match_id)
+
+    if request.method == "GET":
+        comments = Comment.objects.filter(match=match).order_by('-id')
+        data = [_serialize_comment(comment) for comment in comments]
+        return JsonResponse(
+            {"match": {"id": match.id, "event_name": match.event_name}, "comments": data, "count": len(data)}
+        )
+
+    # POST : accepte JSON ou form-data classique
+    payload = request.POST
+    if request.content_type and "application/json" in request.content_type:
+        try:
+            payload = json.loads(request.body.decode() or "{}")
+        except json.JSONDecodeError:
+            return JsonResponse({"errors": {"__all__": ["JSON invalide"]}}, status=400)
+
+    form = CommentForm(payload)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.match = match
+        comment.save()
+        return JsonResponse({"comment": _serialize_comment(comment)}, status=201)
+
+    return JsonResponse({"errors": form.errors}, status=400)
+
+
 def vote(request, match_id, team_pos):
 
 
@@ -117,7 +161,7 @@ def vote(request, match_id, team_pos):
     match_team.votes += 1
     match_team.save()
 
-    request.session[session_key] = True
+    request.session[session_key] = match_team.id
 
     messages.success(request, f'Vote enregistré pour {match_team.team.team_name} !')
     return redirect('match_detail', match_id=match_id)
@@ -132,12 +176,15 @@ def cancel_vote(request, match_id):
         messages.warning(request, "Vous n'avez pas encore voté pour ce match.")
         return redirect('match_detail', match_id=match_id)
 
-    match_teams = MatchTeam.objects.filter(match=match).order_by('-votes')
-    if match_teams.exists():
-        team_to_decrease = match_teams.first()
-        if team_to_decrease.votes > 0:
-            team_to_decrease.votes -= 1
-            team_to_decrease.save()
+    match_team_id = request.session.get(session_key)
+    if match_team_id:
+        try:
+            team_to_decrease = MatchTeam.objects.get(id=match_team_id, match=match)
+            if team_to_decrease.votes > 0:
+                team_to_decrease.votes -= 1
+                team_to_decrease.save()
+        except MatchTeam.DoesNotExist:
+            pass
 
     del request.session[session_key]
     messages.success(request, 'Vote annulé !')

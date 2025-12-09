@@ -35,7 +35,6 @@
             </div>
         </div>
     </div>
-
     <div class="team-column">
         <div class="team-card">
             <div class="team-info">
@@ -63,49 +62,55 @@
 {% endif %}
 
 <div class="comments-area">
-    <h2>Commentaires</h2>
-
-    <div class="comment-form-card">
-        <h3>Ajouter un commentaire</h3>
-        <form method="post" class="comment-form">
-            {% csrf_token %}
-            <input type="hidden" name="add_comment" value="1">
-            <div class="form-field">
-                {{ form.username }}
-                {% if form.username.errors %}
-                    <div class="error-message">{{ form.username.errors }}</div>
-                {% endif %}
-            </div>
-            <div class="form-field">
-                {{ form.text }}
-                {% if form.text.errors %}
-                    <div class="error-message">{{ form.text.errors }}</div>
-                {% endif %}
-            </div>
-            <button type="submit" class="submit-button">Publier le commentaire</button>
-        </form>
+    <div class="comments-header">
+        <h2>Commentaires</h2>
+        <p class="helper-text">Chargés et ajoutés en JavaScript (Ajax vanilla).</p>
     </div>
 
-    {% if comments %}
-        {% for comment in comments %}
-            <div class="comment-item">
-                <div class="comment-info">
-                    <div class="comment-header">
-                        <span class="comment-author">{{ comment.username }}</span>
-                        <span class="comment-date">{{ comment.created_at|date:"d/m/Y H:i" }}</span>
-                        <a href="{% url 'edit_comment' comment.id %}" class="edit-link" title="Modifier ce commentaire">Modifier</a>
-                        <form method="post" action="{% url 'delete_comment' comment.id %}" class="delete-form" style="display: inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')">
-                            {% csrf_token %}
-                            <button type="submit" class="delete-link" title="Supprimer ce commentaire"> Supprimer</button>
-                        </form>
-                    </div>
-                    <p class="comment-text">{{ comment.text }}</p>
+    <div id="comments-area"
+         data-match-id="{{ match.id }}"
+         data-comments-url="{% url 'comments_api' match.id %}">
+        <div id="comment-feedback" class="helper-text" aria-live="polite"></div>
+
+        <div class="comment-form-card">
+            <h3>Ajouter un commentaire</h3>
+            <form method="post" class="comment-form" id="comment-form">
+                {% csrf_token %}
+                <input type="hidden" name="add_comment" value="1">
+                <div class="form-field">
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <div class="error-message">{{ form.username.errors }}</div>
+                    {% endif %}
                 </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="no-comments">Aucun commentaire pour le moment.</p>
-    {% endif %}
+                <div class="form-field">
+                    {{ form.text }}
+                    {% if form.text.errors %}
+                        <div class="error-message">{{ form.text.errors }}</div>
+                    {% endif %}
+                </div>
+                <button type="submit" class="submit-button">Publier le commentaire</button>
+            </form>
+        </div>
+
+        <div id="comment-list">
+            {% if comments %}
+                {% for comment in comments %}
+                    <div class="comment-item">
+                        <div class="comment-info">
+                            <div class="comment-header">
+                                <span class="comment-author">{{ comment.username }}</span>
+                                <span class="comment-date">{{ comment.created_at|date:"d/m/Y H:i" }}</span>
+                            </div>
+                            <p class="comment-text">{{ comment.text }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-comments">Aucun commentaire pour le moment.</p>
+            {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}
 

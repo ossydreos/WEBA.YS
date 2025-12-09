@@ -476,6 +476,16 @@ a {
     font-style: italic;
 }
 
+/* Helper text */
+.comments-header {
+    margin-bottom: 0.8rem;
+}
+
+.helper-text {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
 /* ==================== RESPONSIVE ==================== */
 
 @media (max-width: 768px) {
