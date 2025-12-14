@@ -1,7 +1,4 @@
-/**
- * JavaScript vanilla pour le projet (DOM, callbacks, Ajax).
- * Sources consultées : MDN Web Docs (fetch API) et w3schools/Ajax vanilla.
- */
+
 (function () {
   const commentsArea = document.querySelector("#comments-area");
   const commentList = document.querySelector("#comment-list");
@@ -15,6 +12,11 @@
   const commentsUrl = commentsArea.dataset.commentsUrl;
   const matchId = commentsArea.dataset.matchId;
 
+  const showFeedback = (text, tone = "info") => {
+    if (!feedbackBox) return;
+    feedbackBox.textContent = text;
+    feedbackBox.dataset.tone = tone;
+  };
 
   const renderComment = (comment) => {
     const item = document.createElement("div");
@@ -31,7 +33,35 @@
     date.className = "comment-date";
     date.textContent = comment.created_at || "Date inconnue";
 
-    header.append(author, date);
+    // Ajouter les liens modifier/supprimer
+    const actions = document.createElement("div");
+    actions.className = "comment-actions";
+
+    const editLink = document.createElement("a");
+    editLink.className = "edit-link";
+    editLink.href = `/comment/${comment.id}/edit/`;
+    editLink.textContent = "Modifier";
+
+    const deleteForm = document.createElement("form");
+    deleteForm.className = "delete-form";
+    deleteForm.method = "post";
+    deleteForm.action = `/comment/${comment.id}/delete/`;
+    deleteForm.style.display = "inline";
+
+    const csrfInput = document.createElement("input");
+    csrfInput.type = "hidden";
+    csrfInput.name = "csrfmiddlewaretoken";
+    csrfInput.value = getCsrfToken();
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "delete-link";
+    deleteButton.type = "submit";
+    deleteButton.textContent = "Supprimer";
+
+    deleteForm.append(csrfInput, deleteButton);
+    actions.append(editLink, deleteForm);
+
+    header.append(author, date, actions);
 
     const text = document.createElement("p");
     text.className = "comment-text";

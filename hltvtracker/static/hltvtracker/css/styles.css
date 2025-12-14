@@ -435,6 +435,16 @@ a {
     margin-bottom: 0.3rem;
 }
 
+.comment-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.comment-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
 .comment-author {
     font-weight: 600;
 }
@@ -497,6 +507,33 @@ a {
 .helper-text {
     color: #6c757d;
     font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.helper-text:not([data-tone=""]) {
+    opacity: 1;
+}
+
+.helper-text[data-tone="info"] {
+    background-color: #cff4fc;
+    border: 1px solid #b6effb;
+    color: #055160;
+}
+
+.helper-text[data-tone="success"] {
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+    color: #0f5132;
+}
+
+.helper-text[data-tone="error"] {
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    color: #842029;
 }
 
 /* ==================== RESPONSIVE ==================== */

@@ -100,6 +100,13 @@
                             <div class="comment-header">
                                 <span class="comment-author">{{ comment.username }}</span>
                                 <span class="comment-date">{{ comment.created_at|date:"d/m/Y H:i" }}</span>
+                                <div class="comment-actions">
+                                    <a href="{% url 'edit_comment' comment.id %}" class="edit-link">Modifier</a>
+                                    <form method="post" action="{% url 'delete_comment' comment.id %}" class="delete-form" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="delete-link">Supprimer</button>
+                                    </form>
+                                </div>
                             </div>
                             <p class="comment-text">{{ comment.text }}</p>
                         </div>
