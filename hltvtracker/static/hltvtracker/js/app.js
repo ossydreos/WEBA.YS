@@ -15,11 +15,6 @@
   const commentsUrl = commentsArea.dataset.commentsUrl;
   const matchId = commentsArea.dataset.matchId;
 
-  const showFeedback = (text, tone = "info") => {
-    if (!feedbackBox) return;
-    feedbackBox.textContent = text;
-    feedbackBox.dataset.tone = tone;
-  };
 
   const renderComment = (comment) => {
     const item = document.createElement("div");
