@@ -6,11 +6,10 @@
   const feedbackBox = document.querySelector("#comment-feedback");
 
   if (!commentsArea || !commentList) {
-    return; // page sans match, on ne fait rien
+    return;
   }
 
   const commentsUrl = commentsArea.dataset.commentsUrl;
-  const matchId = commentsArea.dataset.matchId;
 
   const showFeedback = (text, tone = "info") => {
     if (!feedbackBox) return;
@@ -33,7 +32,6 @@
     date.className = "comment-date";
     date.textContent = comment.created_at || "Date inconnue";
 
-    // Ajouter les liens modifier/supprimer
     const actions = document.createElement("div");
     actions.className = "comment-actions";
 
@@ -167,7 +165,6 @@
 
   commentForm?.addEventListener("submit", submitComment);
 
-  // Premier chargement Ajax pour éviter un rechargement complet.
   fetchComments();
 })();
 
