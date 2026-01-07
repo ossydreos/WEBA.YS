@@ -32,6 +32,11 @@
     date.className = "comment-date";
     date.textContent = comment.created_at || "Date inconnue";
 
+    // Indicateur de sentiment
+    const sentimentIndicator = document.createElement("span");
+    sentimentIndicator.className = `sentiment-indicator ${comment.sentiment_color || 'sentiment-neutral'}`;
+    sentimentIndicator.innerHTML = `${comment.sentiment_emoji || '😐'} ${comment.sentiment || 'NEUTRE'}`;
+
     const actions = document.createElement("div");
     actions.className = "comment-actions";
 
@@ -59,7 +64,7 @@
     deleteForm.append(csrfInput, deleteButton);
     actions.append(editLink, deleteForm);
 
-    header.append(author, date, actions);
+    header.append(author, date, sentimentIndicator, actions);
 
     const text = document.createElement("p");
     text.className = "comment-text";

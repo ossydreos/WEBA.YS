@@ -44,10 +44,23 @@ class Vote(models.Model):
 
 
 class Comment(models.Model):
+    SENTIMENT_CHOICES = [
+        ('POSITIVE', 'Positif'),
+        ('NEGATIVE', 'Négatif'),
+        ('NEUTRAL', 'Neutre'),
+    ]
+
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
     username = models.CharField(max_length=100)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True, null=True)
+    sentiment = models.CharField(
+        max_length=10,
+        choices=SENTIMENT_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Analyse automatique du sentiment du commentaire"
+    )
 
     def __str__(self):
         return f"{self.username} sur {self.match.event_name}"
