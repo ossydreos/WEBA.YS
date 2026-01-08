@@ -106,23 +106,14 @@ def match_detail(request, match_id):
     return render(request, 'match.html', context)
 
 
-def _serialize_comment(comment):
-    """Retourne un dict prêt à être envoyé en JSON."""
-    sentiment = comment.sentiment
-    if not sentiment:
-        # Analyser le sentiment si pas encore fait
-        sentiment = SentimentAnalyzer.analyze_sentiment(comment.text)
-        comment.sentiment = sentiment
-        comment.save()
-
+def serialize_comment(comment):
+    """Retourne un dict prêt à être envoyé en JSON avec formatage côté client."""
     return {
         "id": comment.id,
         "username": comment.username,
         "text": comment.text,
         "created_at": localtime(comment.created_at).strftime("%d/%m/%Y %H:%M") if comment.created_at else "",
-        "sentiment": sentiment,
-        "sentiment_emoji": SentimentAnalyzer.get_sentiment_emoji(sentiment),
-        "sentiment_color": SentimentAnalyzer.get_sentiment_color(sentiment),
+        "sentiment": comment.sentiment,
     }
 
 
@@ -133,7 +124,7 @@ def comments_api(request, match_id):
 
     if request.method == "GET":
         comments = Comment.objects.filter(match=match).order_by('-id')
-        data = [_serialize_comment(comment) for comment in comments]
+        data = [serialize_comment(comment) for comment in comments]
         return JsonResponse(
             {"match": {"id": match.id, "event_name": match.event_name}, "comments": data, "count": len(data)}
         )
@@ -157,7 +148,7 @@ def comments_api(request, match_id):
         comment.sentiment = sentiment
         comment.save()
 
-        return JsonResponse({"comment": _serialize_comment(comment)}, status=201)
+        return JsonResponse({"comment": serialize_comment(comment)}, status=201)
 
     return JsonResponse({"errors": form.errors}, status=400)
 

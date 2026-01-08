@@ -32,10 +32,14 @@
     date.className = "comment-date";
     date.textContent = comment.created_at || "Date inconnue";
 
-    // Indicateur de sentiment
+    // Indicateur de sentiment (calculé côté client)
+    const sentiment = comment.sentiment || 'NEUTRAL';
+    const sentimentEmoji = sentiment === 'POSITIVE' ? '😊' : sentiment === 'NEGATIVE' ? '😞' : '😐';
+    const sentimentColor = `sentiment-${sentiment.toLowerCase()}`;
+
     const sentimentIndicator = document.createElement("span");
-    sentimentIndicator.className = `sentiment-indicator ${comment.sentiment_color || 'sentiment-neutral'}`;
-    sentimentIndicator.innerHTML = `${comment.sentiment_emoji || '😐'} ${comment.sentiment || 'NEUTRE'}`;
+    sentimentIndicator.className = `sentiment-indicator ${sentimentColor}`;
+    sentimentIndicator.innerHTML = `${sentimentEmoji} ${sentiment}`;
 
     const actions = document.createElement("div");
     actions.className = "comment-actions";

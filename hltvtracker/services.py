@@ -9,27 +9,8 @@ class SentimentAnalyzer:
     """
 
     MODEL_URL = "https://router.huggingface.co/hf-inference/models/nlptown/bert-base-multilingual-uncased-sentiment"
-    HEADERS = {"Authorization": "Bearer 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"}
+    HEADERS = {"Authorization": "Bearer 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"}
 
-    @staticmethod
-    def _correct_common_typos(text):
-        """Corrige quelques fautes d'orthographe courantes dans les commentaires gaming"""
-        corrections = {
-            'incroayble': 'incroyable',
-            'incroiable': 'incroyable',
-            'incroiables': 'incroyables',
-            'nulllll': 'nul',
-            'nulleeeee': 'nulle',
-            'tropbien': 'trop bien',
-            'tropnulle': 'trop nulle',
-            'chier': 'chiant',  # Pour éviter la censure
-            'merde': 'mauvais',  # Pour éviter la censure
-        }
-
-        for wrong, correct in corrections.items():
-            text = text.replace(wrong, correct)
-
-        return text
 
     @staticmethod
     def analyze_sentiment(text):
@@ -39,9 +20,6 @@ class SentimentAnalyzer:
         """
         if not text or not text.strip():
             return 'NEUTRAL'
-
-        # Correction orthographique basique
-        text = SentimentAnalyzer._correct_common_typos(text)
 
         try:
             payload = {"inputs": text[:500]}
