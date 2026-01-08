@@ -9,7 +9,7 @@ class SentimentAnalyzer:
     """
 
     MODEL_URL = "https://router.huggingface.co/hf-inference/models/nlptown/bert-base-multilingual-uncased-sentiment"
-    HEADERS = {"Authorization": "Bearer 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"}
+    HEADERS = {"Authorization": "Bearer "}
 
 
     @staticmethod
