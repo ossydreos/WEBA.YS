@@ -1,9 +1,3 @@
-/**
- * Configuration de l'asynchronisme
- * Changez cette valeur pour tester le comportement synchrone (false) ou asynchrone (true)
- * - true (asynchrone) : Les requêtes ne bloquent pas l'interface utilisateur
- * - false (synchrone) : Les requêtes bloquent l'interface jusqu'à la réponse (déconseillé en production)
- */
 const ASYNC_MODE = false;
 
 // Mini preuve simple: tick UI
