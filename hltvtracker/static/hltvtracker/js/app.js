@@ -26,50 +26,6 @@ setInterval(() => {
   }
 }, 50);
 
-// Compteur visuel UI - Preuve visuelle du freeze
-let uiCounter = 0;
-const uiCounterElement = document.createElement("div");
-uiCounterElement.id = "ui-freeze-monitor";
-uiCounterElement.style.cssText = `
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background: ${ASYNC_MODE ? '#28a745' : '#dc3545'};
-  color: white;
-  padding: 15px 20px;
-  border-radius: 8px;
-  font-family: monospace;
-  font-size: 14px;
-  z-index: 10000;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  min-width: 250px;
-`;
-uiCounterElement.innerHTML = `
-  <div><strong>Mode: ${ASYNC_MODE ? 'ASYNCHRONE' : 'SYNCHRONE'}</strong></div>
-  <div style="margin-top: 5px;">Compteur UI: <span id="ui-counter-value">0</span></div>
-  <div style="font-size: 11px; margin-top: 5px; opacity: 0.9;">
-    ${ASYNC_MODE ? '✓ Doit continuer pendant les requêtes' : '⚠ Va se bloquer pendant les requêtes'}
-  </div>
-`;
-document.body.appendChild(uiCounterElement);
-
-setInterval(() => {
-  uiCounter++;
-  const counterSpan = document.getElementById("ui-counter-value");
-  if (counterSpan) {
-    counterSpan.textContent = uiCounter;
-  }
-}, 100);
-
-console.log(
-  `%c========== DÉMO PÉDAGOGIQUE XHR SYNC/ASYNC ==========`,
-  'font-size: 14px; font-weight: bold; color: #007bff;'
-);
-console.log(`Mode configuré: ${ASYNC_MODE ? '✅ ASYNCHRONE' : '🔴 SYNCHRONE'}`);
-console.log(`Moniteur Event Loop: activé (seuil: ${EVENT_LOOP_THRESHOLD}ms)`);
-console.log(`Compteur UI: activé (mise à jour toutes les 100ms)`);
-console.log(`%c====================================================`, 'color: #007bff;');
-
 (function () {
   const commentsArea = document.querySelector("#comments-area");
   const commentList = document.querySelector("#comment-list");
@@ -103,15 +59,6 @@ console.log(`%c====================================================`, 'color: #0
     date.className = "comment-date";
     date.textContent = comment.created_at || "Date inconnue";
 
-    // Indicateur de sentiment (calculé côté client)
-    const sentiment = comment.sentiment || 'NEUTRAL';
-    const sentimentEmoji = sentiment === 'POSITIVE' ? '😊' : sentiment === 'NEGATIVE' ? '😞' : '😐';
-    const sentimentColor = `sentiment-${sentiment.toLowerCase()}`;
-
-    const sentimentIndicator = document.createElement("span");
-    sentimentIndicator.className = `sentiment-indicator ${sentimentColor}`;
-    sentimentIndicator.innerHTML = `${sentimentEmoji} ${sentiment}`;
-
     const actions = document.createElement("div");
     actions.className = "comment-actions";
 
@@ -139,7 +86,7 @@ console.log(`%c====================================================`, 'color: #0
     deleteForm.append(csrfInput, deleteButton);
     actions.append(editLink, deleteForm);
 
-    header.append(author, date, sentimentIndicator, actions);
+    header.append(author, date, actions);
 
     const text = document.createElement("p");
     text.className = "comment-text";

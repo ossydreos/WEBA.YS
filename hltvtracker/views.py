@@ -8,7 +8,6 @@ from django.views.decorators.http import require_http_methods
 
 from .forms import CommentForm
 from .models import *
-from .services import SentimentAnalyzer
 
 
 def edit_comment(request, comment_id):
@@ -113,7 +112,6 @@ def serialize_comment(comment):
         "username": comment.username,
         "text": comment.text,
         "created_at": localtime(comment.created_at).strftime("%d/%m/%Y %H:%M") if comment.created_at else "",
-        "sentiment": comment.sentiment,
     }
 
 
@@ -143,34 +141,9 @@ def comments_api(request, match_id):
         comment.match = match
         comment.save()
 
-        # Analyser automatiquement le sentiment du nouveau commentaire
-        sentiment = SentimentAnalyzer.analyze_sentiment(comment.text)
-        comment.sentiment = sentiment
-        comment.save()
-
         return JsonResponse({"comment": serialize_comment(comment)}, status=201)
 
     return JsonResponse({"errors": form.errors}, status=400)
-
-
-@require_http_methods(["POST"])
-def analyze_sentiment(request, comment_id):
-    """Endpoint pour analyser le sentiment d'un commentaire spécifique."""
-    comment = get_object_or_404(Comment, id=comment_id)
-
-    try:
-        sentiment = SentimentAnalyzer.analyze_sentiment(comment.text)
-        comment.sentiment = sentiment
-        comment.save()
-
-        return JsonResponse({
-            "comment_id": comment.id,
-            "sentiment": sentiment,
-            "sentiment_emoji": SentimentAnalyzer.get_sentiment_emoji(sentiment),
-            "sentiment_color": SentimentAnalyzer.get_sentiment_color(sentiment),
-        })
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
 
 
 def vote(request, match_id, team_pos):
