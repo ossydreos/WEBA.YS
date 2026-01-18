@@ -4,7 +4,71 @@
  * - true (asynchrone) : Les requêtes ne bloquent pas l'interface utilisateur
  * - false (synchrone) : Les requêtes bloquent l'interface jusqu'à la réponse (déconseillé en production)
  */
-const ASYNC_MODE = true;
+const ASYNC_MODE = false;
+
+// =============== INSTRUMENTATION PÉDAGOGIQUE ===============
+// Moniteur d'Event Loop - Détecte les blocages du thread principal
+let eventLoopLastTick = performance.now();
+let eventLoopFreezeCount = 0;
+const EVENT_LOOP_THRESHOLD = 120; // ms - seuil de détection de freeze
+
+setInterval(() => {
+  const now = performance.now();
+  const delta = now - eventLoopLastTick;
+  eventLoopLastTick = now;
+  
+  if (delta > EVENT_LOOP_THRESHOLD) {
+    eventLoopFreezeCount++;
+    console.warn(
+      `🔴 EVENT LOOP FREEZE #${eventLoopFreezeCount} - Durée: ${delta.toFixed(0)}ms ` +
+      `(attendu: ~50ms) - Mode: ${ASYNC_MODE ? 'ASYNC' : 'SYNC'}`
+    );
+  }
+}, 50);
+
+// Compteur visuel UI - Preuve visuelle du freeze
+let uiCounter = 0;
+const uiCounterElement = document.createElement("div");
+uiCounterElement.id = "ui-freeze-monitor";
+uiCounterElement.style.cssText = `
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: ${ASYNC_MODE ? '#28a745' : '#dc3545'};
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 14px;
+  z-index: 10000;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  min-width: 250px;
+`;
+uiCounterElement.innerHTML = `
+  <div><strong>Mode: ${ASYNC_MODE ? 'ASYNCHRONE' : 'SYNCHRONE'}</strong></div>
+  <div style="margin-top: 5px;">Compteur UI: <span id="ui-counter-value">0</span></div>
+  <div style="font-size: 11px; margin-top: 5px; opacity: 0.9;">
+    ${ASYNC_MODE ? '✓ Doit continuer pendant les requêtes' : '⚠ Va se bloquer pendant les requêtes'}
+  </div>
+`;
+document.body.appendChild(uiCounterElement);
+
+setInterval(() => {
+  uiCounter++;
+  const counterSpan = document.getElementById("ui-counter-value");
+  if (counterSpan) {
+    counterSpan.textContent = uiCounter;
+  }
+}, 100);
+
+console.log(
+  `%c========== DÉMO PÉDAGOGIQUE XHR SYNC/ASYNC ==========`,
+  'font-size: 14px; font-weight: bold; color: #007bff;'
+);
+console.log(`Mode configuré: ${ASYNC_MODE ? '✅ ASYNCHRONE' : '🔴 SYNCHRONE'}`);
+console.log(`Moniteur Event Loop: activé (seuil: ${EVENT_LOOP_THRESHOLD}ms)`);
+console.log(`Compteur UI: activé (mise à jour toutes les 100ms)`);
+console.log(`%c====================================================`, 'color: #007bff;');
 
 (function () {
   const commentsArea = document.querySelector("#comments-area");
@@ -115,37 +179,149 @@ const ASYNC_MODE = true;
     return match ? match[1] : "";
   };
 
-  /**
-   * Fonction helper pour effectuer des requêtes HTTP avec XMLHttpRequest
-   * Permet de choisir entre mode synchrone (async = false) ou asynchrone (async = true)
-   */
   const xhrRequest = (url, options = {}, async = true) => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      const method = options.method || "GET";
-      const headers = options.headers || {};
-      const body = options.body || null;
+    const xhr = new XMLHttpRequest();
+    const method = options.method || "GET";
+    const headers = options.headers || {};
+    const body = options.body || null;
+    
+    // ========== INSTRUMENTATION: Preuve setTimeout (Event Loop) ==========
+    const requestId = Math.random().toString(36).substr(2, 9);
+    const setTimeoutBefore = performance.now();
+    let setTimeoutExecuted = false;
+    
+    setTimeout(() => {
+      const setTimeoutAfter = performance.now();
+      const setTimeoutDelay = setTimeoutAfter - setTimeoutBefore;
+      setTimeoutExecuted = true;
+      
+      console.log(
+        `⏱️  setTimeout(0) exécuté [${requestId}] - Délai réel: ${setTimeoutDelay.toFixed(0)}ms ` +
+        `(attendu: ~0-5ms) - ${setTimeoutDelay > 50 ? '🔴 RETARDÉ par requête synchrone' : '✅ Normal'}`
+      );
+    }, 0);
+    
+    // ========== INSTRUMENTATION: Mesure de durée requête ==========
+    const requestStartTime = performance.now();
+    console.log(
+      `%c🚀 DÉBUT REQUÊTE [${requestId}]`,
+      'color: #007bff; font-weight: bold;',
+      `\n  Mode: ${async ? '✅ ASYNCHRONE' : '🔴 SYNCHRONE'}`,
+      `\n  Méthode: ${method}`,
+      `\n  URL: ${url}`
+    );
 
-      // Configuration de la requête (async = true par défaut, false pour synchrone)
-      xhr.open(method, url, async);
+    // Configuration de la requête (async = true par défaut, false pour synchrone)
+    xhr.open(method, url, async);
 
-      // Définition des en-têtes
-      Object.keys(headers).forEach((key) => {
-        xhr.setRequestHeader(key, headers[key]);
+    // Définition des en-têtes
+    Object.keys(headers).forEach((key) => {
+      xhr.setRequestHeader(key, headers[key]);
+    });
+
+    if (async) {
+      // Mode asynchrone : retourner une Promise
+      return new Promise((resolve, reject) => {
+        xhr.onload = () => {
+          const requestEndTime = performance.now();
+          const duration = requestEndTime - requestStartTime;
+          
+          console.log(
+            `%c✓ FIN REQUÊTE [${requestId}]`,
+            'color: #28a745; font-weight: bold;',
+            `\n  Durée totale: ${duration.toFixed(0)}ms`,
+            `\n  Status: ${xhr.status}`,
+            `\n  Mode: ASYNCHRONE (UI NON BLOQUÉE)`
+          );
+          
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+              resolve({
+                ok: true,
+                status: xhr.status,
+                json: () => Promise.resolve(data),
+              });
+            } catch (e) {
+              resolve({
+                ok: true,
+                status: xhr.status,
+                json: () => Promise.resolve({}),
+              });
+            }
+          } else {
+            try {
+              const errorData = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+              reject({
+                ok: false,
+                status: xhr.status,
+                statusText: xhr.statusText,
+                json: () => Promise.resolve(errorData),
+              });
+            } catch (e) {
+              reject({
+                ok: false,
+                status: xhr.status,
+                statusText: xhr.statusText,
+                json: () => Promise.resolve({}),
+              });
+            }
+          }
+        };
+
+        xhr.onerror = () => {
+          const requestEndTime = performance.now();
+          const duration = requestEndTime - requestStartTime;
+          console.error(`❌ ERREUR REQUÊTE [${requestId}] - Durée: ${duration.toFixed(0)}ms`);
+          
+          reject({
+            ok: false,
+            status: 0,
+            statusText: "Network Error",
+            json: () => Promise.resolve({}),
+          });
+        };
+
+        xhr.send(body);
       });
-
-      // Gestion de la réponse
-      xhr.onload = () => {
+    } else {
+      // Mode synchrone : xhr.send() bloque le thread jusqu'à la réponse
+      console.warn(
+        `%c⚠️  ATTENTION: xhr.send() SYNCHRONE va BLOQUER le thread principal`,
+        'color: #ff6b6b; font-weight: bold; font-size: 12px;'
+      );
+      
+      try {
+        const sendStartTime = performance.now();
+        xhr.send(body); // 🔴 BLOQUE ICI jusqu'à la réponse
+        const sendEndTime = performance.now();
+        const sendDuration = sendEndTime - sendStartTime;
+        
+        const requestEndTime = performance.now();
+        const totalDuration = requestEndTime - requestStartTime;
+        
+        console.log(
+          `%c✓ FIN REQUÊTE SYNCHRONE [${requestId}]`,
+          'color: #ff6b6b; font-weight: bold;',
+          `\n  Durée xhr.send() (BLOCAGE): ${sendDuration.toFixed(0)}ms`,
+          `\n  Durée totale: ${totalDuration.toFixed(0)}ms`,
+          `\n  Status: ${xhr.status}`,
+          `\n  🔴 UI ÉTAIT BLOQUÉE pendant ${sendDuration.toFixed(0)}ms`,
+          `\n  🔴 Event Loop ÉTAIT GELÉE`,
+          `\n  🔴 setTimeout(0) ÉTAIT RETARDÉ`
+        );
+        
+        // Traitement direct après le blocage
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const data = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-            resolve({
+            return Promise.resolve({
               ok: true,
               status: xhr.status,
               json: () => Promise.resolve(data),
             });
           } catch (e) {
-            resolve({
+            return Promise.resolve({
               ok: true,
               status: xhr.status,
               json: () => Promise.resolve({}),
@@ -154,14 +330,14 @@ const ASYNC_MODE = true;
         } else {
           try {
             const errorData = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-            reject({
+            return Promise.reject({
               ok: false,
               status: xhr.status,
               statusText: xhr.statusText,
               json: () => Promise.resolve(errorData),
             });
           } catch (e) {
-            reject({
+            return Promise.reject({
               ok: false,
               status: xhr.status,
               statusText: xhr.statusText,
@@ -169,21 +345,23 @@ const ASYNC_MODE = true;
             });
           }
         }
-      };
-
-      // Gestion des erreurs réseau
-      xhr.onerror = () => {
-        reject({
+      } catch (e) {
+        const requestEndTime = performance.now();
+        const duration = requestEndTime - requestStartTime;
+        console.error(
+          `❌ ERREUR REQUÊTE SYNCHRONE [${requestId}]`,
+          `\n  Durée: ${duration.toFixed(0)}ms`,
+          `\n  Erreur:`, e
+        );
+        
+        return Promise.reject({
           ok: false,
           status: 0,
           statusText: "Network Error",
           json: () => Promise.resolve({}),
         });
-      };
-
-      // Envoi de la requête
-      xhr.send(body);
-    });
+      }
+    }
   };
 
   const fetchComments = (async = ASYNC_MODE) => {
