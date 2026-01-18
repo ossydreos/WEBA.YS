@@ -6,25 +6,26 @@
  */
 const ASYNC_MODE = false;
 
-// =============== INSTRUMENTATION PÉDAGOGIQUE ===============
-// Moniteur d'Event Loop - Détecte les blocages du thread principal
-let eventLoopLastTick = performance.now();
-let eventLoopFreezeCount = 0;
-const EVENT_LOOP_THRESHOLD = 120; // ms - seuil de détection de freeze
+// Mini preuve simple: tick UI
+(function uiTick() {
+  const el = document.createElement("div");
+  el.style.position = "fixed";
+  el.style.bottom = "10px";
+  el.style.right = "10px";
+  el.style.padding = "6px 10px";
+  el.style.background = "rgba(0,0,0,0.75)";
+  el.style.color = "white";
+  el.style.fontFamily = "monospace";
+  el.style.borderRadius = "6px";
+  el.style.zIndex = 999999;
+  document.body.appendChild(el);
 
-setInterval(() => {
-  const now = performance.now();
-  const delta = now - eventLoopLastTick;
-  eventLoopLastTick = now;
-  
-  if (delta > EVENT_LOOP_THRESHOLD) {
-    eventLoopFreezeCount++;
-    console.warn(
-      `🔴 EVENT LOOP FREEZE #${eventLoopFreezeCount} - Durée: ${delta.toFixed(0)}ms ` +
-      `(attendu: ~50ms) - Mode: ${ASYNC_MODE ? 'ASYNC' : 'SYNC'}`
-    );
-  }
-}, 50);
+  let t = 0;
+  setInterval(() => {
+    t++;
+    el.textContent = `UI tick: ${t} | ${ASYNC_MODE ? "ASYNC" : "SYNC"}`;
+  }, 100);
+})();
 
 (function () {
   const commentsArea = document.querySelector("#comments-area");
@@ -32,9 +33,7 @@ setInterval(() => {
   const commentForm = document.querySelector("#comment-form");
   const feedbackBox = document.querySelector("#comment-feedback");
 
-  if (!commentsArea || !commentList) {
-    return;
-  }
+  if (!commentsArea || !commentList) return;
 
   const commentsUrl = commentsArea.dataset.commentsUrl;
 
@@ -42,6 +41,21 @@ setInterval(() => {
     if (!feedbackBox) return;
     feedbackBox.textContent = text;
     feedbackBox.dataset.tone = tone;
+  };
+
+  const getCsrfToken = () => {
+    const tokenInput = commentForm?.querySelector("input[name='csrfmiddlewaretoken']");
+    if (tokenInput) return tokenInput.value;
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? match[1] : "";
+  };
+
+  const renderEmpty = () => {
+    commentList.replaceChildren();
+    const empty = document.createElement("p");
+    empty.className = "no-comments";
+    empty.textContent = "Aucun commentaire pour le moment.";
+    commentList.appendChild(empty);
   };
 
   const renderComment = (comment) => {
@@ -96,242 +110,70 @@ setInterval(() => {
     commentList.appendChild(item);
   };
 
-  const renderEmpty = () => {
-    const empty = document.createElement("p");
-    empty.className = "no-comments";
-    empty.textContent = "Aucun commentaire pour le moment.";
-    commentList.appendChild(empty);
-  };
-
-  const commentCallbacks = {
-    onCommentsLoaded: (comments) => {
-      commentList.replaceChildren();
-      if (!comments || comments.length === 0) {
-        renderEmpty();
-        return;
-      }
-      comments.forEach(renderComment);
-    },
-    onError: (message) => {
-      showFeedback(message, "error");
-    },
-  };
-
-  const getCsrfToken = () => {
-    const tokenInput = commentForm?.querySelector(
-      "input[name='csrfmiddlewaretoken']"
-    );
-    if (tokenInput) return tokenInput.value;
-    const match = document.cookie.match(/csrftoken=([^;]+)/);
-    return match ? match[1] : "";
-  };
-
-  const xhrRequest = (url, options = {}, async = true) => {
+  function xhrRequest(url, { method = "GET", headers = {}, body = null } = {}) {
     const xhr = new XMLHttpRequest();
-    const method = options.method || "GET";
-    const headers = options.headers || {};
-    const body = options.body || null;
-    
-    // ========== INSTRUMENTATION: Preuve setTimeout (Event Loop) ==========
-    const requestId = Math.random().toString(36).substr(2, 9);
-    const setTimeoutBefore = performance.now();
-    let setTimeoutExecuted = false;
-    
+    xhr.open(method, url, ASYNC_MODE);
+
+    for (const k in headers) xhr.setRequestHeader(k, headers[k]);
+
+    const t0 = performance.now();
     setTimeout(() => {
-      const setTimeoutAfter = performance.now();
-      const setTimeoutDelay = setTimeoutAfter - setTimeoutBefore;
-      setTimeoutExecuted = true;
-      
-      console.log(
-        `⏱️  setTimeout(0) exécuté [${requestId}] - Délai réel: ${setTimeoutDelay.toFixed(0)}ms ` +
-        `(attendu: ~0-5ms) - ${setTimeoutDelay > 50 ? '🔴 RETARDÉ par requête synchrone' : '✅ Normal'}`
-      );
+      console.log(`[Timer 0] ${(performance.now() - t0).toFixed(0)}ms (retard si SYNC)`);
     }, 0);
-    
-    // ========== INSTRUMENTATION: Mesure de durée requête ==========
-    const requestStartTime = performance.now();
-    console.log(
-      `%c🚀 DÉBUT REQUÊTE [${requestId}]`,
-      'color: #007bff; font-weight: bold;',
-      `\n  Mode: ${async ? '✅ ASYNCHRONE' : '🔴 SYNCHRONE'}`,
-      `\n  Méthode: ${method}`,
-      `\n  URL: ${url}`
-    );
 
-    // Configuration de la requête (async = true par défaut, false pour synchrone)
-    xhr.open(method, url, async);
+    const parseJson = () => {
+      try { return xhr.responseText ? JSON.parse(xhr.responseText) : {}; }
+      catch { return {}; }
+    };
 
-    // Définition des en-têtes
-    Object.keys(headers).forEach((key) => {
-      xhr.setRequestHeader(key, headers[key]);
-    });
-
-    if (async) {
-      // Mode asynchrone : retourner une Promise
-      return new Promise((resolve, reject) => {
+    if (ASYNC_MODE) {
+      return new Promise((resolve) => {
         xhr.onload = () => {
-          const requestEndTime = performance.now();
-          const duration = requestEndTime - requestStartTime;
-          
-          console.log(
-            `%c✓ FIN REQUÊTE [${requestId}]`,
-            'color: #28a745; font-weight: bold;',
-            `\n  Durée totale: ${duration.toFixed(0)}ms`,
-            `\n  Status: ${xhr.status}`,
-            `\n  Mode: ASYNCHRONE (UI NON BLOQUÉE)`
-          );
-          
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const data = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-              resolve({
-                ok: true,
-                status: xhr.status,
-                json: () => Promise.resolve(data),
-              });
-            } catch (e) {
-              resolve({
-                ok: true,
-                status: xhr.status,
-                json: () => Promise.resolve({}),
-              });
-            }
-          } else {
-            try {
-              const errorData = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-              reject({
-                ok: false,
-                status: xhr.status,
-                statusText: xhr.statusText,
-                json: () => Promise.resolve(errorData),
-              });
-            } catch (e) {
-              reject({
-                ok: false,
-                status: xhr.status,
-                statusText: xhr.statusText,
-                json: () => Promise.resolve({}),
-              });
-            }
-          }
-        };
-
-        xhr.onerror = () => {
-          const requestEndTime = performance.now();
-          const duration = requestEndTime - requestStartTime;
-          console.error(`❌ ERREUR REQUÊTE [${requestId}] - Durée: ${duration.toFixed(0)}ms`);
-          
-          reject({
-            ok: false,
-            status: 0,
-            statusText: "Network Error",
-            json: () => Promise.resolve({}),
+          console.log(`[XHR] ${method} ${url} -> ${xhr.status} in ${(performance.now() - t0).toFixed(0)}ms (ASYNC)`);
+          resolve({
+            ok: xhr.status >= 200 && xhr.status < 300,
+            status: xhr.status,
+            statusText: xhr.statusText,
+            data: parseJson(),
           });
         };
-
+        xhr.onerror = () => resolve({ ok: false, status: 0, statusText: "Network Error", data: {} });
         xhr.send(body);
       });
-    } else {
-      // Mode synchrone : xhr.send() bloque le thread jusqu'à la réponse
-      console.warn(
-        `%c⚠️  ATTENTION: xhr.send() SYNCHRONE va BLOQUER le thread principal`,
-        'color: #ff6b6b; font-weight: bold; font-size: 12px;'
-      );
-      
-      try {
-        const sendStartTime = performance.now();
-        xhr.send(body); // 🔴 BLOQUE ICI jusqu'à la réponse
-        const sendEndTime = performance.now();
-        const sendDuration = sendEndTime - sendStartTime;
-        
-        const requestEndTime = performance.now();
-        const totalDuration = requestEndTime - requestStartTime;
-        
-        console.log(
-          `%c✓ FIN REQUÊTE SYNCHRONE [${requestId}]`,
-          'color: #ff6b6b; font-weight: bold;',
-          `\n  Durée xhr.send() (BLOCAGE): ${sendDuration.toFixed(0)}ms`,
-          `\n  Durée totale: ${totalDuration.toFixed(0)}ms`,
-          `\n  Status: ${xhr.status}`,
-          `\n  🔴 UI ÉTAIT BLOQUÉE pendant ${sendDuration.toFixed(0)}ms`,
-          `\n  🔴 Event Loop ÉTAIT GELÉE`,
-          `\n  🔴 setTimeout(0) ÉTAIT RETARDÉ`
-        );
-        
-        // Traitement direct après le blocage
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const data = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-            return Promise.resolve({
-              ok: true,
-              status: xhr.status,
-              json: () => Promise.resolve(data),
-            });
-          } catch (e) {
-            return Promise.resolve({
-              ok: true,
-              status: xhr.status,
-              json: () => Promise.resolve({}),
-            });
-          }
-        } else {
-          try {
-            const errorData = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-            return Promise.reject({
-              ok: false,
-              status: xhr.status,
-              statusText: xhr.statusText,
-              json: () => Promise.resolve(errorData),
-            });
-          } catch (e) {
-            return Promise.reject({
-              ok: false,
-              status: xhr.status,
-              statusText: xhr.statusText,
-              json: () => Promise.resolve({}),
-            });
-          }
-        }
-      } catch (e) {
-        const requestEndTime = performance.now();
-        const duration = requestEndTime - requestStartTime;
-        console.error(
-          `❌ ERREUR REQUÊTE SYNCHRONE [${requestId}]`,
-          `\n  Durée: ${duration.toFixed(0)}ms`,
-          `\n  Erreur:`, e
-        );
-        
-        return Promise.reject({
-          ok: false,
-          status: 0,
-          statusText: "Network Error",
-          json: () => Promise.resolve({}),
-        });
-      }
     }
-  };
 
-  const fetchComments = (async = ASYNC_MODE) => {
-    showFeedback("Chargement des commentaires (Ajax)...", "info");
-    return xhrRequest(commentsUrl, { headers: { Accept: "application/json" } }, async)
-      .then((response) => {
-        return response.json();
-      })
-      .then((data) => {
-        commentCallbacks.onCommentsLoaded(data.comments || []);
-        showFeedback(
-          `Commentaires mis à jour (${data.comments?.length || 0})`,
-          "success"
-        );
-        return data;
-      })
-      .catch((error) => {
-        commentCallbacks.onError("Impossible de charger les commentaires.");
-      });
-  };
+    // SYNC: freeze ici
+    xhr.send(body);
+    console.log(`[XHR] ${method} ${url} -> ${xhr.status} in ${(performance.now() - t0).toFixed(0)}ms (SYNC)`);
+    return Promise.resolve({
+      ok: xhr.status >= 200 && xhr.status < 300,
+      status: xhr.status,
+      statusText: xhr.statusText,
+      data: parseJson(),
+    });
+  }
 
-  const submitComment = (event, async = ASYNC_MODE) => {
+  async function fetchComments() {
+    showFeedback("Chargement...", "info");
+    const res = await xhrRequest(commentsUrl, { headers: { Accept: "application/json" } });
+
+    if (!res.ok) {
+      showFeedback("Impossible de charger les commentaires.", "error");
+      return;
+    }
+
+    const comments = res.data.comments || [];
+    commentList.replaceChildren();
+
+    if (comments.length === 0) return renderEmpty();
+    comments.forEach(renderComment);
+
+    showFeedback(`Commentaires mis à jour (${comments.length})`, "success");
+  }
+
+  async function submitComment(event) {
     event.preventDefault();
+
     const formData = new FormData(commentForm);
     const payload = {
       username: (formData.get("username") || "").toString().trim(),
@@ -343,9 +185,9 @@ setInterval(() => {
       return;
     }
 
-    showFeedback("Envoi du commentaire (Ajax)...", "info");
+    showFeedback("Envoi...", "info");
 
-    xhrRequest(commentsUrl, {
+    const res = await xhrRequest(commentsUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -353,27 +195,24 @@ setInterval(() => {
         Accept: "application/json",
       },
       body: JSON.stringify(payload),
-    }, async)
-      .then((response) => {
-        return response.json();
-      })
-      .then((data) => {
-        if (data.errors && typeof data.errors === "object") {
-          const errorMessage = Object.values(data.errors).flat().join(" / ");
-          throw new Error(errorMessage);
-        }
-        showFeedback("Commentaire enregistré (base mise à jour).", "success");
-        commentForm.reset();
-        return fetchComments(async);
-      })
-      .catch((error) => {
-        const errorMessage = error.message || "Erreur lors de l'envoi.";
-        commentCallbacks.onError(errorMessage);
-      });
-  };
+    });
+
+    if (!res.ok) {
+      showFeedback("Erreur lors de l'envoi.", "error");
+      return;
+    }
+
+    if (res.data.errors) {
+      const msg = Object.values(res.data.errors).flat().join(" / ");
+      showFeedback(msg || "Erreur lors de l'envoi.", "error");
+      return;
+    }
+
+    showFeedback("Commentaire enregistré.", "success");
+    commentForm.reset();
+    await fetchComments();
+  }
 
   commentForm?.addEventListener("submit", submitComment);
-
   fetchComments();
 })();
-
