@@ -1,25 +1,4 @@
-const ASYNC_MODE = false;
-
-// Mini preuve simple: tick UI
-(function uiTick() {
-  const el = document.createElement("div");
-  el.style.position = "fixed";
-  el.style.bottom = "10px";
-  el.style.right = "10px";
-  el.style.padding = "6px 10px";
-  el.style.background = "rgba(0,0,0,0.75)";
-  el.style.color = "white";
-  el.style.fontFamily = "monospace";
-  el.style.borderRadius = "6px";
-  el.style.zIndex = 999999;
-  document.body.appendChild(el);
-
-  let t = 0;
-  setInterval(() => {
-    t++;
-    el.textContent = `UI tick: ${t} | ${ASYNC_MODE ? "ASYNC" : "SYNC"}`;
-  }, 100);
-})();
+const ASYNC_MODE = true;
 
 (function () {
   const commentsArea = document.querySelector("#comments-area");
@@ -123,7 +102,6 @@ const ASYNC_MODE = false;
     if (ASYNC_MODE) {
       return new Promise((resolve) => {
         xhr.onload = () => {
-          console.log(`[XHR] ${method} ${url} -> ${xhr.status} in ${(performance.now() - t0).toFixed(0)}ms (ASYNC)`);
           resolve({
             ok: xhr.status >= 200 && xhr.status < 300,
             status: xhr.status,
@@ -183,8 +161,7 @@ const ASYNC_MODE = false;
 
     const res = await xhrRequest(commentsUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+      headers: {        "Content-Type": "application/json",
         "X-CSRFToken": getCsrfToken(),
         Accept: "application/json",
       },
