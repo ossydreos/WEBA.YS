@@ -1,3 +1,10 @@
+/**
+ * Configuration de l'asynchronisme
+ * Changez cette valeur pour tester le comportement synchrone (false) ou asynchrone (true)
+ * - true (asynchrone) : Les requêtes ne bloquent pas l'interface utilisateur
+ * - false (synchrone) : Les requêtes bloquent l'interface jusqu'à la réponse (déconseillé en production)
+ */
+const ASYNC_MODE = true;
 
 (function () {
   const commentsArea = document.querySelector("#comments-area");
@@ -108,13 +115,81 @@
     return match ? match[1] : "";
   };
 
-  const fetchComments = () => {
-    showFeedback("Chargement des commentaires (Ajax)...", "info");
-    return fetch(commentsUrl, { headers: { Accept: "application/json" } })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Impossible de charger les commentaires.");
+  /**
+   * Fonction helper pour effectuer des requêtes HTTP avec XMLHttpRequest
+   * Permet de choisir entre mode synchrone (async = false) ou asynchrone (async = true)
+   */
+  const xhrRequest = (url, options = {}, async = true) => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const method = options.method || "GET";
+      const headers = options.headers || {};
+      const body = options.body || null;
+
+      // Configuration de la requête (async = true par défaut, false pour synchrone)
+      xhr.open(method, url, async);
+
+      // Définition des en-têtes
+      Object.keys(headers).forEach((key) => {
+        xhr.setRequestHeader(key, headers[key]);
+      });
+
+      // Gestion de la réponse
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+            resolve({
+              ok: true,
+              status: xhr.status,
+              json: () => Promise.resolve(data),
+            });
+          } catch (e) {
+            resolve({
+              ok: true,
+              status: xhr.status,
+              json: () => Promise.resolve({}),
+            });
+          }
+        } else {
+          try {
+            const errorData = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+            reject({
+              ok: false,
+              status: xhr.status,
+              statusText: xhr.statusText,
+              json: () => Promise.resolve(errorData),
+            });
+          } catch (e) {
+            reject({
+              ok: false,
+              status: xhr.status,
+              statusText: xhr.statusText,
+              json: () => Promise.resolve({}),
+            });
+          }
         }
+      };
+
+      // Gestion des erreurs réseau
+      xhr.onerror = () => {
+        reject({
+          ok: false,
+          status: 0,
+          statusText: "Network Error",
+          json: () => Promise.resolve({}),
+        });
+      };
+
+      // Envoi de la requête
+      xhr.send(body);
+    });
+  };
+
+  const fetchComments = (async = ASYNC_MODE) => {
+    showFeedback("Chargement des commentaires (Ajax)...", "info");
+    return xhrRequest(commentsUrl, { headers: { Accept: "application/json" } }, async)
+      .then((response) => {
         return response.json();
       })
       .then((data) => {
@@ -126,11 +201,11 @@
         return data;
       })
       .catch((error) => {
-        commentCallbacks.onError(error.message);
+        commentCallbacks.onError("Impossible de charger les commentaires.");
       });
   };
 
-  const submitComment = (event) => {
+  const submitComment = (event, async = ASYNC_MODE) => {
     event.preventDefault();
     const formData = new FormData(commentForm);
     const payload = {
@@ -145,7 +220,7 @@
 
     showFeedback("Envoi du commentaire (Ajax)...", "info");
 
-    fetch(commentsUrl, {
+    xhrRequest(commentsUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -153,22 +228,22 @@
         Accept: "application/json",
       },
       body: JSON.stringify(payload),
-    })
-      .then(async (response) => {
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          const errorMessage =
-            data?.errors && typeof data.errors === "object"
-              ? Object.values(data.errors).flat().join(" / ")
-              : "Erreur lors de l'envoi.";
+    }, async)
+      .then((response) => {
+        return response.json();
+      })
+      .then((data) => {
+        if (data.errors && typeof data.errors === "object") {
+          const errorMessage = Object.values(data.errors).flat().join(" / ");
           throw new Error(errorMessage);
         }
         showFeedback("Commentaire enregistré (base mise à jour).", "success");
         commentForm.reset();
-        return fetchComments();
+        return fetchComments(async);
       })
       .catch((error) => {
-        commentCallbacks.onError(error.message);
+        const errorMessage = error.message || "Erreur lors de l'envoi.";
+        commentCallbacks.onError(errorMessage);
       });
   };
 
